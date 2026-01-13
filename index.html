@@ -1,21 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WebFX Diagnostic</title>
+    <meta charset="UTF-8">
+    <title>WebFX API Bridge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* This is the box Hydra watches */
+        #hydra-target {
+            font-size: 20px;
+            color: #ff3b30; /* Red for visibility */
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            background: #000;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        #status {
+            margin-top: 10px;
+            color: #555;
+            font-size: 12px;
+        }
+    </style>
 </head>
-<body style="background: white; color: black; text-align: center; padding-top: 50px;">
+<body>
 
-    <h1>WebFX Diagnostic Mode</h1>
-    <p>If you see a Card Image below, the account is working.</p>
-    <p>If you see NOTHING below this line, your browser is blocking it.</p>
-    
-    <hr>
+    <div id="hydra-target">Waiting...</div>
+    <div id="status">Connecting to WebFX...</div>
 
-    <script src="https://www.magicwebfx.com/u/script.php?user=s3th06&twitter=yes"></script>
+    <script>
+        // Your WebFX User ID
+        var userID = 's3th06';
+        
+        // Polling Interval (2.1 seconds, same as official script)
+        var pollInterval = 2100;
 
-    <hr>
-    
-    <p><em>Remember: You must REFRESH the page to see a new card.</em></p>
+        function doPoll() {
+            var r = new Date().getTime(); // Timestamp to prevent caching
+            
+            // DIRECT API CALL
+            $.get('https://www.magicwebfx.com/u/getcard.php?user=' + userID + '&r=' + r, function(data) {
+                
+                // 'data' comes back like "kh", "10s", "2d"
+                console.log("Raw Data: " + data);
+                $("#status").text("Last check: " + new Date().toLocaleTimeString());
 
+                // PARSE THE CARD (Fixing the "10" bug in the original script)
+                var valueChar, suitChar;
+                
+                if (data.length === 3) { // It's a 10 (e.g., "10h")
+                    valueChar = "10";
+                    suitChar = data.charAt(2);
+                } else {
+                    valueChar = data.charAt(0);
+                    suitChar = data.charAt(1);
+                }
+
+                var fullText = convertToText(valueChar, suitChar);
+
+                // UPDATE THE SCREEN FOR HYDRA
+                var currentText = $("#hydra-target").text();
+                if (currentText !== fullText) {
+                    $("#hydra-target").text(fullText);
+                }
+                
+                // Loop
+                setTimeout(doPoll, pollInterval);
+            })
+            .fail(function() {
+                $("#status").text("Error connecting to WebFX.");
+                setTimeout(doPoll, pollInterval);
+            });
+        }
+
+        function convertToText(v, s) {
+            var valName = "";
+            var suitName = "";
+
+            // Value Map
+            if (v == "1" || v == "a") valName = "Ace";
+            else if (v == "2") valName = "Two";
+            else if (v == "3") valName = "Three";
+            else if (v == "4") valName = "Four";
+            else if (v == "5") valName = "Five";
+            else if (v == "6") valName = "Six";
+            else if (v == "7") valName = "Seven";
+            else if (v == "8") valName = "Eight";
+            else if (v == "9") valName = "Nine";
+            else if (v == "10" || v == "t") valName = "Ten";
+            else if (v == "j") valName = "Jack";
+            else if (v == "q") valName = "Queen";
+            else if (v == "k") valName = "King";
+            else valName = v; // Fallback
+
+            // Suit Map
+            if (s == "c") suitName = "Clubs";
+            else if (s == "h") suitName = "Hearts";
+            else if (s == "s") suitName = "Spades";
+            else if (s == "d") suitName = "Diamonds";
+            else suitName = s;
+
+            return valName + " of " + suitName;
+        }
+
+        // Start the engine
+        $(document).ready(function(){
+            doPoll();
+        });
+
+    </script>
 </body>
 </html>
