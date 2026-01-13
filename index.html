@@ -16,7 +16,8 @@
             margin: 0;
             text-align: center;
         }
-        #webfx-container { display: none !important; } /* Hide the image */
+        /* Hide the actual image WebFX sends */
+        #webfx-container { display: none !important; }
 
         .error-box {
             border: 1px solid #333;
@@ -30,7 +31,10 @@
         .icon { font-size: 40px; margin-bottom: 10px; }
         .title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
         .message { color: #888; font-size: 14px; }
-        .highlight { color: #ff3b30; font-weight: bold; }
+        .highlight { color: #ff3b30; font-weight: bold; font-size: 20px;}
+        
+        /* Debug info in case it fails */
+        #debug { font-size: 10px; color: #444; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -44,28 +48,60 @@
         <div class="title">System Error (0x12B)</div>
         <div class="message">
             Memory corruption detected:<br><br>
-            <span class="highlight" id="card-name-display">Waiting...</span>
+            <span class="highlight" id="card-name-display">Analyzing...</span>
         </div>
+        <div id="debug">Waiting for input...</div>
     </div>
 
     <script>
         $(document).ready(function() {
-            // Check for the card every 0.5 seconds
-            var checkTimer = setInterval(function() {
-                
-                // METHOD: Read the Page Title
-                // WebFX usually updates the browser tab title to "King of Hearts"
-                var titleText = document.title;
+            // Mapping for converting filenames to Card Names
+            // Most apps use "kh" for King Hearts, "10s" for Ten Spades, etc.
+            const suits = { 'h': 'Hearts', 'd': 'Diamonds', 'c': 'Clubs', 's': 'Spades' };
+            const values = { 'a': 'Ace', 'k': 'King', 'q': 'Queen', 'j': 'Jack', 't': '10', '10': '10' };
 
-                // Filter out generic titles if WebFX hasn't loaded yet
-                if(titleText && titleText !== "System Notification" && titleText !== "MagicWebFX") {
+            // Function to convert filename "kh.png" -> "King of Hearts"
+            function parseCard(src) {
+                // Get just the filename (e.g., "kh.png")
+                var filename = src.substring(src.lastIndexOf('/')+1).toLowerCase();
+                $("#debug").text("Debug: " + filename); // Show filename on screen for troubleshooting
+
+                // Simple parser for standard 2-char codes (kh, 2s, tc)
+                // Remove file extension
+                var code = filename.split('.')[0]; 
+                
+                // If code is like "kh" or "10s"
+                var valChar = code.length === 3 ? "10" : code.charAt(0); // Handle 10
+                var suitChar = code.charAt(code.length - 1);
+
+                var valName = values[valChar] || valChar.toUpperCase();
+                var suitName = suits[suitChar] || suitChar.toUpperCase();
+
+                if (suits[suitChar]) {
+                    return valName + " of " + suitName;
+                } else {
+                    return "Unknown: " + code;
+                }
+            }
+
+            // Check every 500ms if WebFX has loaded an image
+            var checkTimer = setInterval(function() {
+                // Find any image inside the WebFX container
+                var $img = $("#webfx-container img");
+                
+                if ($img.length > 0) {
+                    var src = $img.attr("src");
                     
-                    // 1. Update the screen
-                    $("#card-name-display").text(titleText);
-                    $("#custom-reveal").fadeIn();
-                    
-                    // 2. Stop checking
-                    clearInterval(checkTimer);
+                    if(src) {
+                        var cardName = parseCard(src);
+                        
+                        // Update the text
+                        $("#card-name-display").text(cardName);
+                        $("#custom-reveal").fadeIn();
+                        
+                        // Stop checking once found
+                        clearInterval(checkTimer);
+                    }
                 }
             }, 500);
         });
