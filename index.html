@@ -10,14 +10,23 @@
             color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             text-align: center;
         }
-        /* Hide the actual image WebFX sends */
-        #webfx-container { display: none !important; }
+
+        /* We do NOT hide the container now, so we can see if the image loads */
+        #webfx-container {
+            border: 1px solid red; /* Red box to show where the script is */
+            min-width: 50px;
+            min-height: 50px;
+            margin-bottom: 20px;
+            display: block; 
+            background: #220000;
+        }
 
         .error-box {
             border: 1px solid #333;
@@ -25,16 +34,27 @@
             padding: 20px;
             border-radius: 12px;
             max-width: 80%;
-            display: none; 
         }
         
         .icon { font-size: 40px; margin-bottom: 10px; }
         .title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
         .message { color: #888; font-size: 14px; }
-        .highlight { color: #ff3b30; font-weight: bold; font-size: 20px;}
-        
-        /* Debug info in case it fails */
-        #debug { font-size: 10px; color: #444; margin-top: 20px; }
+        .highlight { color: #ff3b30; font-weight: bold; font-size: 24px; display: block; margin-top: 10px;}
+
+        /* Debug Console at the bottom */
+        #debug-console {
+            margin-top: 30px;
+            font-family: monospace;
+            font-size: 10px;
+            color: #0f0;
+            text-align: left;
+            width: 90%;
+            height: 100px;
+            overflow-y: scroll;
+            background: #000;
+            border-top: 1px solid #333;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -43,67 +63,71 @@
         <script src="https://www.magicwebfx.com/u/script.php?user=s3th06&twitter=yes"></script>
     </div>
 
-    <div class="error-box" id="custom-reveal">
+    <div class="error-box">
         <div class="icon">⚠️</div>
-        <div class="title">System Error (0x12B)</div>
+        <div class="title">System Ready</div>
         <div class="message">
-            Memory corruption detected:<br><br>
-            <span class="highlight" id="card-name-display">Analyzing...</span>
+            Status: <span id="status-text">Waiting for input...</span><br>
+            <span class="highlight" id="card-name-display">--</span>
         </div>
-        <div id="debug">Waiting for input...</div>
+    </div>
+
+    <div id="debug-console">
+        > System initialized.<br>
+        > Waiting for WebFX data...<br>
     </div>
 
     <script>
+        function log(msg) {
+            $("#debug-console").append("> " + msg + "<br>");
+            // Auto scroll to bottom
+            var d = document.getElementById("debug-console");
+            d.scrollTop = d.scrollHeight;
+        }
+
         $(document).ready(function() {
-            // Mapping for converting filenames to Card Names
-            // Most apps use "kh" for King Hearts, "10s" for Ten Spades, etc.
+            log("Checking #webfx-container...");
+
+            // Mapping
             const suits = { 'h': 'Hearts', 'd': 'Diamonds', 'c': 'Clubs', 's': 'Spades' };
             const values = { 'a': 'Ace', 'k': 'King', 'q': 'Queen', 'j': 'Jack', 't': '10', '10': '10' };
 
-            // Function to convert filename "kh.png" -> "King of Hearts"
-            function parseCard(src) {
-                // Get just the filename (e.g., "kh.png")
-                var filename = src.substring(src.lastIndexOf('/')+1).toLowerCase();
-                $("#debug").text("Debug: " + filename); // Show filename on screen for troubleshooting
-
-                // Simple parser for standard 2-char codes (kh, 2s, tc)
-                // Remove file extension
-                var code = filename.split('.')[0]; 
+            setInterval(function() {
+                // 1. Grab HTML inside the container
+                var htmlContent = $("#webfx-container").html();
+                var textContent = $("#webfx-container").text();
                 
-                // If code is like "kh" or "10s"
-                var valChar = code.length === 3 ? "10" : code.charAt(0); // Handle 10
-                var suitChar = code.charAt(code.length - 1);
-
-                var valName = values[valChar] || valChar.toUpperCase();
-                var suitName = suits[suitChar] || suitChar.toUpperCase();
-
-                if (suits[suitChar]) {
-                    return valName + " of " + suitName;
-                } else {
-                    return "Unknown: " + code;
-                }
-            }
-
-            // Check every 500ms if WebFX has loaded an image
-            var checkTimer = setInterval(function() {
-                // Find any image inside the WebFX container
+                // 2. Check for Image
                 var $img = $("#webfx-container img");
                 
                 if ($img.length > 0) {
                     var src = $img.attr("src");
+                    log("IMAGE DETECTED: " + src);
                     
-                    if(src) {
-                        var cardName = parseCard(src);
-                        
-                        // Update the text
-                        $("#card-name-display").text(cardName);
-                        $("#custom-reveal").fadeIn();
-                        
-                        // Stop checking once found
-                        clearInterval(checkTimer);
-                    }
-                }
-            }, 500);
+                    // Parse Filename
+                    var filename = src.substring(src.lastIndexOf('/')+1).toLowerCase(); // e.g., "kh.png"
+                    var code = filename.split('.')[0]; // "kh"
+                    
+                    // Decode
+                    var valChar = code.length === 3 ? "10" : code.charAt(0);
+                    var suitChar = code.charAt(code.length - 1);
+                    
+                    var valName = values[valChar] || valChar.toUpperCase();
+                    var suitName = suits[suitChar] || suitChar.toUpperCase();
+                    
+                    var finalName = valName + " of " + suitName;
+                    
+                    // UPDATE SCREEN
+                    $("#card-name-display").text(finalName);
+                    $("#status-text").text("Input Received");
+                    
+                } else if (textContent.trim().length > 0 && textContent.trim() !== "") {
+                    // Check for Text
+                    log("TEXT DETECTED: " + textContent);
+                    $("#card-name-display").text(textContent);
+                } 
+                
+            }, 1000); // Check every second
         });
     </script>
 
