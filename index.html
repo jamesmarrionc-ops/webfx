@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Notification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: #000; /* Black background */
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* This hides the default WebFX image container */
+        #webfx-container {
+            display: none !important;
+        }
+
+        /* Your Custom Reveal Style */
+        .error-box {
+            border: 1px solid #333;
+            background: #111;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 80%;
+            display: none; /* Hidden until data loads */
+        }
+        
+        .icon { font-size: 40px; margin-bottom: 10px; }
+        .title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+        .message { color: #888; font-size: 14px; }
+        .highlight { color: #ff3b30; font-weight: bold; } /* Red text for the card */
+    </style>
+</head>
+<body>
+
+    <div id="webfx-container">
+        <script src="https://www.magicwebfx.com/u/script.php?user=s3th06&twitter=yes&..."></script>
+    </div>
+
+    <div class="error-box" id="custom-reveal">
+        <div class="icon">⚠️</div>
+        <div class="title">System Error (0x12B)</div>
+        <div class="message">
+            Memory corruption detected at address: <br><br>
+            <span class="highlight" id="card-name-display">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        // 3. The Logic to Extract the Data
+        $(document).ready(function() {
+            // Give WebFX 1 second to load the data
+            setTimeout(function() {
+                // WebFX usually puts the card name in an element with class 'webfx-name' or similar
+                // But the most reliable way is to read the hidden inputs it creates
+                
+                // OPTION A: If you configured WebFX to output text
+                // We will grab the text from the hidden container
+                var fullText = $("#webfx-container").text(); 
+                
+                // OPTION B: WebFX standard variables (often injected as global vars)
+                // If the script creates a visible text, we grab it.
+                // Note: You may need to inspect your specific WebFX settings to see exactly 
+                // what ID it gives the text. Usually, it's just inside the script container.
+                
+                // Let's assume for this example we just want to show the UI
+                // In a real scenario, you'd inspect the DOM to find the card text
+                
+                // Reveal your custom box
+                $("#custom-reveal").fadeIn();
+                
+                // Advanced: If you want to grab the specific card name, 
+                // you usually add a hidden <span> in your WebFX settings 
+                // e.g., <span id="my-card">##VALUE## of ##SUIT##</span>
+                // Then you just do:
+                // var card = $("#my-card").text();
+                // $("#card-name-display").text(card);
+                
+            }, 1000);
+        });
+    </script>
+
+</body>
+</html>
