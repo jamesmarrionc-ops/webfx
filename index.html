@@ -1,135 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>System Notification</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        body {
-            background-color: #000;
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-
-        /* We do NOT hide the container now, so we can see if the image loads */
-        #webfx-container {
-            border: 1px solid red; /* Red box to show where the script is */
-            min-width: 50px;
-            min-height: 50px;
-            margin-bottom: 20px;
-            display: block; 
-            background: #220000;
-        }
-
-        .error-box {
-            border: 1px solid #333;
-            background: #111;
-            padding: 20px;
-            border-radius: 12px;
-            max-width: 80%;
-        }
-        
-        .icon { font-size: 40px; margin-bottom: 10px; }
-        .title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
-        .message { color: #888; font-size: 14px; }
-        .highlight { color: #ff3b30; font-weight: bold; font-size: 24px; display: block; margin-top: 10px;}
-
-        /* Debug Console at the bottom */
-        #debug-console {
-            margin-top: 30px;
-            font-family: monospace;
-            font-size: 10px;
-            color: #0f0;
-            text-align: left;
-            width: 90%;
-            height: 100px;
-            overflow-y: scroll;
-            background: #000;
-            border-top: 1px solid #333;
-            padding: 10px;
-        }
-    </style>
+    <title>WebFX Diagnostic</title>
 </head>
-<body>
+<body style="background: white; color: black; text-align: center; padding-top: 50px;">
 
-    <div id="webfx-container">
-        <script src="https://www.magicwebfx.com/u/script.php?user=s3th06&twitter=yes"></script>
-    </div>
+    <h1>WebFX Diagnostic Mode</h1>
+    <p>If you see a Card Image below, the account is working.</p>
+    <p>If you see NOTHING below this line, your browser is blocking it.</p>
+    
+    <hr>
 
-    <div class="error-box">
-        <div class="icon">⚠️</div>
-        <div class="title">System Ready</div>
-        <div class="message">
-            Status: <span id="status-text">Waiting for input...</span><br>
-            <span class="highlight" id="card-name-display">--</span>
-        </div>
-    </div>
+    <script src="https://www.magicwebfx.com/u/script.php?user=s3th06&twitter=yes"></script>
 
-    <div id="debug-console">
-        > System initialized.<br>
-        > Waiting for WebFX data...<br>
-    </div>
-
-    <script>
-        function log(msg) {
-            $("#debug-console").append("> " + msg + "<br>");
-            // Auto scroll to bottom
-            var d = document.getElementById("debug-console");
-            d.scrollTop = d.scrollHeight;
-        }
-
-        $(document).ready(function() {
-            log("Checking #webfx-container...");
-
-            // Mapping
-            const suits = { 'h': 'Hearts', 'd': 'Diamonds', 'c': 'Clubs', 's': 'Spades' };
-            const values = { 'a': 'Ace', 'k': 'King', 'q': 'Queen', 'j': 'Jack', 't': '10', '10': '10' };
-
-            setInterval(function() {
-                // 1. Grab HTML inside the container
-                var htmlContent = $("#webfx-container").html();
-                var textContent = $("#webfx-container").text();
-                
-                // 2. Check for Image
-                var $img = $("#webfx-container img");
-                
-                if ($img.length > 0) {
-                    var src = $img.attr("src");
-                    log("IMAGE DETECTED: " + src);
-                    
-                    // Parse Filename
-                    var filename = src.substring(src.lastIndexOf('/')+1).toLowerCase(); // e.g., "kh.png"
-                    var code = filename.split('.')[0]; // "kh"
-                    
-                    // Decode
-                    var valChar = code.length === 3 ? "10" : code.charAt(0);
-                    var suitChar = code.charAt(code.length - 1);
-                    
-                    var valName = values[valChar] || valChar.toUpperCase();
-                    var suitName = suits[suitChar] || suitChar.toUpperCase();
-                    
-                    var finalName = valName + " of " + suitName;
-                    
-                    // UPDATE SCREEN
-                    $("#card-name-display").text(finalName);
-                    $("#status-text").text("Input Received");
-                    
-                } else if (textContent.trim().length > 0 && textContent.trim() !== "") {
-                    // Check for Text
-                    log("TEXT DETECTED: " + textContent);
-                    $("#card-name-display").text(textContent);
-                } 
-                
-            }, 1000); // Check every second
-        });
-    </script>
+    <hr>
+    
+    <p><em>Remember: You must REFRESH the page to see a new card.</em></p>
 
 </body>
 </html>
